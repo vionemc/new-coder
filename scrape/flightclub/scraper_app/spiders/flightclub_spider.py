@@ -11,9 +11,14 @@ Scrapy spider part - it actually performs scraping.
 import scrapy
 
 from scrapy.spider import BaseSpider
-from scrapy.selector import HtmlXPathSelector
+from scrapy import Selector
 
 from scraper_app.items import FlightClubDeal
+
+import logging
+
+logger = logging.getLogger('example')
+logging.basicConfig(filename="flightclub.log", level=logging.DEBUG)
 
 
 class LivingSocialSpider(BaseSpider):
@@ -22,24 +27,38 @@ class LivingSocialSpider(BaseSpider):
     """
     name = "fcny"
     allowed_domains = ["flightclub.com"]
-    start_urls = ["http://www.flightclub.com/air-jordans/air-jordan-1"]
 
-    def parse(self, response):
-        next_page_url = response.xpath('//*[@id="entire-page-wrap"]//div[@class="pages"]/a[@title="Next"]/@href').extract()[0]
-        yield scrapy.Request(next_page_url)
+
+    def start_requests(self):
+        yield scrapy.Request( "http://www.flightclub.com/air-jordans?id=34&p=1", callback=self.first_parse)
+ 
+    def first_parse(self, response):
+        page_count = int(response.xpath('//div[@class="page-counter"]/text()').re("(\d+)\s*$")[0])
+        for i in range(2, page_count+1):
+            yield scrapy.Request( "http://www.flightclub.com/air-jordans?id=34&p={0}".format(i), callback=self.next_parse)
         for product in response.xpath('//a[contains(@class, "product-image")]/@href').extract():
-            print product
             yield scrapy.Request(product, callback=self.parse_items)
 
+    def next_parse(self, response):
+        for product in response.xpath('//a[contains(@class, "product-image")]/@href').extract():
+            yield scrapy.Request(product, callback=self.parse_items)
+            
+            
+
     def parse_items(self, response):
-        hxs = HtmlXPathSelector(response)
+        sel = Selector(response)
         item = FlightClubDeal()
-        item["title"] = hxs.select("//title/text()").extract()[0]
+        item["title"] = sel.xpath("//title/text()").extract()[0]
         item["link"] = response.url
-        item["image"] = hxs.select("//img[contains(@src,'thumbnail')]/@src").extract()
-        style = hxs.select('//li/text()').re(r'\d{6}')
-        if style:
-            item["style"] = style[0]
-            item["colorcode"] = hxs.select('//li/text()').re(r'\s(\d{3})')[0]
-        print item
+        item["image"] = sel.xpath("//img[contains(@src,'thumbnail')]/@src").extract()
+        if len(item["image"]) < 1:
+            item["image"] = sel.xpath("//img[contains(@src,'product')]/@src").extract()
+        style = response.xpath('//ul/li[@class="attribute-list-item"][1]/text()').extract()[1]
+        styles = style.split()
+        #if len(styles) > 2:
+        if len(styles[0]) < 7:
+            item["style"] = styles[0]
+            item["colorcode"] = styles[1]
+        else:
+            item["nikesku"] = styles[0]
         yield item

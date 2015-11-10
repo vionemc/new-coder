@@ -10,7 +10,7 @@ Scrapy pipeline part - stores scraped items in the database.
 """
 
 from sqlalchemy.orm import sessionmaker
-from models import Deals, db_connect, create_deals_table
+from models import Deals, Images, db_connect, create_deals_table
 
 
 class FlightClubPipeline(object):
@@ -31,8 +31,18 @@ class FlightClubPipeline(object):
         This method is called for every item pipeline component.
 
         """
+#        if len(item['image']) > 1:
+#            for i in range(len(item['image'])):
+#                item['image'][i] = item['image'][i][:50] + item['image'][i][item['image'][i].find('/a/i'):]
+#            imagestr = ','.join(item['image'])
+#            item['image'] = imagestr
+#        else:
+#            item['image'] = ""
+
         session = self.Session()
-        deal = Deals(**item)
+        deal_item = item.copy()
+        del deal_item['image']
+        deal = Deals(**deal_item)
 
         try:
             session.add(deal)
@@ -42,5 +52,14 @@ class FlightClubPipeline(object):
             raise
         finally:
             session.close()
+
+        for i in item['image']:
+            image = Images(link=item['link'], image=i)
+            try:
+                session.add(image)
+                session.commit()
+            except:
+                session.rollback()
+                raise
 
         return item

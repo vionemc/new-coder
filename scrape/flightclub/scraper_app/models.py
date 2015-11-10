@@ -10,7 +10,7 @@ Database models part - defines table for storing scraped data.
 Direct run will create the table.
 """
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine.url import URL
 
@@ -38,9 +38,15 @@ class Deals(DeclarativeBase):
     """Sqlalchemy deals model"""
     __tablename__ = "deals"
 
-    id = Column(Integer, primary_key=True)
-    title = Column('title', String)
-    link = Column('link', String, nullable=True)
-    image = Column('image', String, nullable=True)
-    style = Column('style', String, nullable=True)
-    colorcode = Column('colorcode', String, nullable=True)
+    title = Column('title', String(255))
+    link = Column('link', String(255), primary_key=True)
+    style = Column('style', String(6), nullable=True)
+    colorcode = Column('colorcode', String(3), nullable=True)
+    nikesku = Column('nikesku', String(255), nullable=True)
+
+class Images(DeclarativeBase):
+    """Sqlalchemy deals model"""
+    __tablename__ = "images"
+
+    link = Column('link', String(255), ForeignKey('deals.link'))
+    image = Column('image', String(255), primary_key=True)

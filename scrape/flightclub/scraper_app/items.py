@@ -19,3 +19,4 @@ class FlightClubDeal(Item):
     image = Field()
     style = Field()
     colorcode = Field()
+    nikesku = Field()
