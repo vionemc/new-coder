@@ -21,7 +21,7 @@ logger = logging.getLogger('example')
 logging.basicConfig(filename="flightclub.log", level=logging.DEBUG)
 
 
-class LivingSocialSpider(BaseSpider):
+class FlightClubSpider(BaseSpider):
     """
     Spider for regularly updated flightclub.com site, air jordan page
     """
