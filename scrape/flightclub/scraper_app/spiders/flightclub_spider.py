@@ -42,8 +42,6 @@ class FlightClubSpider(BaseSpider):
     def next_parse(self, response):
         for product in response.xpath('//a[contains(@class, "product-image")]/@href').extract():
             yield scrapy.Request(product, callback=self.parse_items)
-            
-            
 
     def parse_items(self, response):
         sel = Selector(response)
